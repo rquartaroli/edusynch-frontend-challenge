@@ -1,3 +1,63 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer components {
+  h1 {
+    @apply text-5xl/[3.5rem] font-normal tracking-[-.1px]
+  }
+  .h1 {
+    @apply text-5xl/[3.5rem] font-normal tracking-[-.1px]
+  }
+  h2 {
+    @apply text-[2.5rem]/[3rem] font-normal tracking-[-.1px]
+  }
+  .h2 {
+    @apply text-[2.5rem]/[3rem] font-normal tracking-[-.1px]
+  }
+  h3 {
+    @apply text-[2rem]/10 font-normal
+  }
+  .h3 {
+    @apply text-[2rem]/10 font-normal
+  }
+  h4 {
+    @apply text-2xl/8 font-normal
+  }
+  .h4 {
+    @apply text-2xl/8 font-normal
+  }
+  h5 {
+    @apply text-xl/8 font-normal
+  }
+  .h5 {
+    @apply text-xl/8 font-normal
+  }
+  p {
+    @apply text-base/6 font-normal
+  }
+  .body {
+    @apply text-base/6 font-normal
+  }
+  .paragraph {
+    @apply text-sm/6 font-normal
+  }
+  label {
+    @apply text-sm/4 font-normal
+  }
+  .label {
+    @apply text-sm/4 font-normal
+  }
+  .small-label {
+    @apply text-xs/[0.875rem] font-normal
+  }
+  .btn-primary {
+    @apply flex justify-center items-center font-normal bg-primary-500 hover:bg-primary-400 text-white rounded-full gap-2
+  }
+  .btn-tertiary {
+    @apply font-normal bg-tertiary-700 hover:bg-tertiary-600 text-white rounded-full gap-2
+  }
+  .AccordionTrigger {
+    @apply w-full flex justify-between items-center
+  }
+}
