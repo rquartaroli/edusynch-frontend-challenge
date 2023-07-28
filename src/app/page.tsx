@@ -11,8 +11,8 @@ import { ArrowRight, Plus, List, X } from "@phosphor-icons/react"
 import { ModalSignIn } from "@/components/ModalSignIn";
 import { ModalSignUp } from "@/components/ModalSignUp";
 import { PriceInNews } from "@/components/PriceInNews";
-import { useState } from "react";
 import { TrBodyCryptoForMobile } from "@/components/TrBodyCryptoForMobile";
+import Link from "next/link";
 
 const animation = { duration: 25000, easing: (t: any) => t }
 
@@ -61,7 +61,6 @@ export default function Home() {
       },
     },
   )
-  const [openCloseMenu, setOpenCloseMenu] = useState(false)
   
   return (
     <main className="w-full flex flex-col bg-white items-center">
@@ -69,12 +68,12 @@ export default function Home() {
         <div className="w-[272px] md:w-[42rem] xl:w-[76rem] h-16 flex items-center justify-between">
           <nav className="flex items-center">
             <Image className="mr-10" src="/logo.png" width={124} height={21} alt='coin synch logo' />
-            <a className="hidden md:flex label text-text-base mr-6 hover:text-zinc-400" href="/">
+            <Link className="hidden md:flex label text-text-base mr-6 hover:text-zinc-400" href="/">
               About us
-            </a>
-            <a className="hidden md:flex label text-text-base hover:text-zinc-400" href="/">
+            </Link>
+            <Link className="hidden md:flex label text-text-base hover:text-zinc-400" href="/">
               Top Crytos
-            </a>
+            </Link>
           </nav>
           <nav className="flex items-center">
             <div className="hidden xl:flex">
@@ -151,13 +150,9 @@ export default function Home() {
                       About us
                     </DropdownMenu.Item>
 
-                    <DropdownMenu.Separator className="h-[1px] bg-white" />
-
                     <DropdownMenu.Item className="label p-2 text-white hover:text-secondary-400">
                       Top Crytos
                     </DropdownMenu.Item>
-
-                    <DropdownMenu.Separator className="h-[1px] bg-white" />
 
                     <Dialog.Root>
                       <Dialog.Trigger asChild>
@@ -165,8 +160,6 @@ export default function Home() {
                       </Dialog.Trigger>
                       <ModalSignIn />
                     </Dialog.Root>
-
-                    <DropdownMenu.Separator className="divide-y h-[1px] bg-white" />
 
                     <Dialog.Root>
                       <Dialog.Trigger asChild>
@@ -255,13 +248,13 @@ export default function Home() {
         <div className="hidden md:flex w-[50%]">
           <div ref={sliderRef} className="keen-slider w-full overflow-hidden flex mt-[3.875rem] xl:mt-[10.25rem]">
             <div className="keen-slider__slide">
-              <Image src="/carousel_1.png" width={500} height={500} alt='carousel 1' />
+              <Image className="w-auto h-auto" src="/carousel_1.png" width={500} height={500} alt='carousel 1' />
             </div>
             <div className="keen-slider__slide">
-              <Image src="/carousel_2.png" width={500} height={500} alt='carousel 2' />
+              <Image className="w-auto h-auto" src="/carousel_2.png" width={500} height={500} alt='carousel 2' />
             </div>
             <div className="keen-slider__slide">
-              <Image src="/carousel_3.png" width={500} height={500} alt='carousel 3' />
+              <Image className="w-auto h-auto" src="/carousel_3.png" width={500} height={500} alt='carousel 3' />
             </div>
           </div>
         </div>
@@ -513,7 +506,7 @@ export default function Home() {
         <span className="hidden md:flex label text-text-base">
           Copyright © 2022 - All rights reserved
         </span>
-        <Image src="/logo.png" width={94} height={16} alt='coin synch logo' />
+        <Image src="/logo.png" width={95} height={16} alt='coin synch logo' />
       </footer>
 
     </main>
