@@ -1,19 +1,31 @@
 import { InputHTMLAttributes, ReactNode, useState } from "react"
 import { Eye, EyeSlash } from "@phosphor-icons/react"
 
-type InputWithIconProps = InputHTMLAttributes<HTMLInputElement> & {
+type InputDynamicForModalProps = InputHTMLAttributes<HTMLInputElement> & {
   id: string
-  phosphorIcon: ReactNode
+  phosphorIcon?: ReactNode
   isInputPassword?: boolean
 }
 
-export function InputWithIcon({ id, phosphorIcon, isInputPassword = false, ...props }: InputWithIconProps) {
+export function InputDynamicForModal({
+  id,
+  phosphorIcon,
+  isInputPassword = false,
+  ...props
+}: InputDynamicForModalProps) {
   const [viewPassword, setViewPassword] = useState(false)
+
   return (
-    <div className="flex items-center w-60 md:w-[272px] xl:w-[384px] h-[48px] p-4 border border-secondary-300 rounded-md">
-      <label htmlFor={id}>
-        {phosphorIcon}
-      </label>
+    <div 
+      className={`flex items-center w-60 md:w-[272px] xl:w-[384px] h-[48px] p-4 border rounded-md ${props.type === 'number' ? 'border-secondary-300/50': 'border-secondary-300'}`}
+    >
+      {
+        phosphorIcon
+        &&
+        <label htmlFor={id}>
+          {phosphorIcon}
+        </label>
+      }
       
       {isInputPassword
       ?

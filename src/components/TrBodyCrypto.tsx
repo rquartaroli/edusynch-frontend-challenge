@@ -1,4 +1,7 @@
+import * as Dialog from '@radix-ui/react-dialog'
+import * as HoverCard from '@radix-ui/react-hover-card';
 import Image from "next/image";
+import { ModalTransferCrypto } from './ModalTransferCrypto';
 
 type TrBodyCryptoProps = {
   indiceValue: string
@@ -8,6 +11,7 @@ type TrBodyCryptoProps = {
   priceValue: string
   changeValue: string
   actionBuy: () => void
+  detailPrice?: string
 }
 
 export function TrBodyCrypto({
@@ -18,6 +22,7 @@ export function TrBodyCrypto({
   priceValue,
   changeValue,
   actionBuy,
+  detailPrice,
 }: TrBodyCryptoProps) {
   return (
     <tr className="even:bg-secondary-100/50 odd:bg-white">
@@ -29,19 +34,58 @@ export function TrBodyCrypto({
         {cryptoValue}&nbsp;
         <span className="text-secondary-500">{cryptoInitialsValue}</span>
       </td>
-      <td className="text-text-base body">
-        {priceValue}
-      </td>
-      <td className={changeValue[0] === '+' ? "text-tertiary-700 body" : "text-quartenary-700 body"}>
+      {detailPrice 
+      ?
+        <td className="text-text-base body">
+          <div className="flex flex-col">
+            {priceValue}
+            <span className="small-label text-primary-500">
+              {detailPrice}
+            </span>
+          </div>
+        </td>
+      :
+        <td className="text-text-base body">
+          {priceValue}
+        </td>
+      }
+      
+      <td className={`body ${changeValue[0] === '+' ? "text-tertiary-700" : "text-quartenary-700"}`}>
         {changeValue}
       </td>
       <td className="text-center">
-        <button 
-          className="btn-tertiary w-[80px] h-[32px] label py-2 px-4"
-          onClick={actionBuy}
-        >
-          Buy
-        </button>
+        {detailPrice
+        ?
+        <Dialog.Root>
+          <HoverCard.Root>
+            <HoverCard.Trigger asChild>
+              <Dialog.Trigger asChild>
+                <button id="btnTransfer">
+                  <Image src="/transfer_icon.png" width={16} height={16} alt="transfer icon" />
+                </button>
+              </Dialog.Trigger>
+            </HoverCard.Trigger>
+            
+            <HoverCard.Portal>
+              <HoverCard.Content className="w-[100px] bg-primary-500 py-2 px-6 rounded shadow-lg" sideOffset={5}>
+                  <h6 className="label text-white text-center">
+                    Transfer Crypto
+                  </h6>
+                <HoverCard.Arrow className="fill-primary-500" />
+              </HoverCard.Content>
+            </HoverCard.Portal>
+          </HoverCard.Root>
+
+          <ModalTransferCrypto nameCryptoForFetch={cryptoValue} />
+        </Dialog.Root>
+        :
+          <button 
+            className="btn-tertiary w-[80px] h-[32px] label py-2 px-4"
+            onClick={actionBuy}
+          >
+            Buy
+          </button>
+        }
       </td>
     </tr>
   )

@@ -46,7 +46,7 @@ export function TrBodyCryptoForMobile({
               <h6 className="small-label text-secondary-500">
                 Change
               </h6>
-              <h6 className={changeValue[0] === '+' ? "label text-tertiary-700" : "label text-quartenary-700"}>
+              <h6 className={`body ${changeValue[0] === '+' ? "text-tertiary-700" : "text-quartenary-700"}`}>
                 {changeValue}
               </h6>
             </div>
