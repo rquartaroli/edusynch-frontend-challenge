@@ -1,0 +1,76 @@
+{
+  "subscribers": [
+    {
+      "id": "i7N2JfmaUjUlvcEOtD7biYTluztIRI2P4sIx",
+      "email": "rafaelquartaroli@hotmail.com"
+    }
+  ],
+  "users": [
+    {
+      "id": "6HbV9YUb8E2epsVS5K42gEMhJIZnmmqiTI2g",
+      "name": "Rafael Quartaroli Carvalho",
+      "email": "rafaelquartaroli@hotmail.com",
+      "password": "$2a$06$n6adOld7NVDuwy91DExDjuTgE.z3I8VtKbEw3ApARkUrqeTbfI70e",
+      "avatar": "https://avatars.githubusercontent.com/u/48213007?v=4",
+      "terms_accepted": true
+    }
+  ],
+  "wallets": [
+    {
+      "id": "6HbV9YUb8E2epsVS5K42gEMhJIZnmmqiTI2g",
+      "cryptos": [
+        {
+          "id": "rdN9ouc3PujdFwgcOXyTUnploYNM723klLEX",
+          "symbol_id": "KRAKEN_SPOT_DOGE_USD",
+          "url": "https://s3.eu-central-1.amazonaws.com/bbxt-static-icons/type-id/png_32/63e240f3047f41c791796784bc719f63.png",
+          "nameCrypto": "KRAKEN",
+          "asset_id": "DOGE",
+          "holdings": 4289.872536427742,
+          "quantity": 25,
+          "change": "0.00"
+        },
+        {
+          "id": "wu1gDb4kat6VG4W19yK9yUNE9H0qKgOiD4TH",
+          "symbol_id": "BITSO_SPOT_XRP_MXN",
+          "url": "https://s3.eu-central-1.amazonaws.com/bbxt-static-icons/type-id/png_32/ba90bcb0cafb4801ac5dd310f47d6411.png",
+          "nameCrypto": "BITSO",
+          "asset_id": "XRP",
+          "holdings": 311510.6793192822,
+          "quantity": 28,
+          "change": "0.00"
+        },
+        {
+          "id": "YcCipTyhzAEhz5fN5QaI9NeLEZl0nT6T9kbx",
+          "symbol_id": "KRAKEN_SPOT_MULTI_USD",
+          "url": "/bitcoin_icon.png",
+          "nameCrypto": "KRAKEN",
+          "asset_id": "MULTI",
+          "holdings": 189.927434945,
+          "quantity": 10,
+          "change": "3.32"
+        },
+        {
+          "id": "KFyXvliwhYo7ecxTFRs4qFGVn2DyD5tsONBa",
+          "symbol_id": "BYBIT_PERP_DASH_USDT",
+          "url": "https://s3.eu-central-1.amazonaws.com/bbxt-static-icons/type-id/png_32/73fb6d7915a24f51930809b9e2b84c8f.png",
+          "nameCrypto": "BYBIT",
+          "asset_id": "DASH",
+          "holdings": 8073.5985,
+          "quantity": 40,
+          "change": "0.00"
+        },
+        {
+          "id": "omrw4LMHdK3lJbc7UxxkMk6WuLqqx5rXWcVy",
+          "symbol_id": "BINANCE_SPOT_REN_USDT",
+          "url": "https://s3.eu-central-1.amazonaws.com/bbxt-static-icons/type-id/png_32/0214c96e32f446b0be1c71a45db43b16.png",
+          "nameCrypto": "BINANCE",
+          "asset_id": "REN",
+          "holdings": 52.325728,
+          "quantity": 15,
+          "change": "-0.07"
+        }
+      ],
+      "balance": 500886.8482557543
+    }
+  ]
+}
