@@ -37,7 +37,7 @@ export function CardTradeCryptoForMobileScreen({
 
       <div className="flex flex-col justify-center px-4">
         <span className="small-label text-secondary-500">Change</span>
-        <span className="small-label text-tertiary-700">{changeValue}</span>
+        <span className={`small-label ${changeValue[0] === '+' ? "text-tertiary-700" : "text-quartenary-700"}`}>{changeValue}</span>
       </div>
 
       <div className="px-4 mb-4">

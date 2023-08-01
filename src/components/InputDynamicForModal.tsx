@@ -32,7 +32,7 @@ export function InputDynamicForModal({
       <>
         <input 
           id={id}
-          className="w-full text-text-base label md:body focus:outline-none"
+          className="w-full text-text-base label md:body focus:outline-none disabled:text-secondary-300 disabled:cursor-not-allowed"
           type={viewPassword ? "text" : "password"}
           {...props}
         />
@@ -49,7 +49,7 @@ export function InputDynamicForModal({
       :
         <input 
           id={id}
-          className="w-full text-text-base label md:body focus:outline-none"
+          className="w-full text-text-base label md:body focus:outline-none disabled:text-secondary-300 disabled:cursor-not-allowed"
           {...props}
         />
       }

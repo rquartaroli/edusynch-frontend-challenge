@@ -3,35 +3,126 @@ import * as Dialog from '@radix-ui/react-dialog'
 import * as Select from '@radix-ui/react-select';
 import { InputDynamicForModal } from './InputDynamicForModal'
 import Image from "next/image";
+import { useEffect, useState } from "react";
+import { API_KEY, coinApi, fakeApi } from "@/services/api";
+import { QuotesTop, QuotesWithFilter } from "@/DTOs/coinAPIDTOs";
+import { getAssetID, getAssetName } from "@/utils/getAssetID";
+import { assets } from "@/utils/assets_icons";
+import { CryptoInMyWallet, WalletDTO } from "@/DTOs/fakeApiDTOs";
+import { useAppSelector } from "@/redux/store";
+import { generateRandomID } from "@/utils/generateRandomID";
 
 export function ModalAddCrypto() {
-  const fakeListCryptos = [
-    {
-      urlImage: '/bitcoin_icon.png',
-      cryptoName: 'Bitcoin',
-      cryptoInitialsName: 'BTC',
-    },
-    {
-      urlImage: '/ethereum_icon.png',
-      cryptoName: 'Ethereum',
-      cryptoInitialsName: 'ETH',
-    },
-    {
-      urlImage: '/cardano_icon.png',
-      cryptoName: 'Cardano',
-      cryptoInitialsName: 'ADA',
-    },
-    {
-      urlImage: '/solana_icon.png',
-      cryptoName: 'Solana',
-      cryptoInitialsName: 'SOL',
-    },
-    {
-      urlImage: '/usdcoin_icon.png',
-      cryptoName: 'USD Coin',
-      cryptoInitialsName: 'USDC',
-    },
-  ]
+  const [cryptoSymbolIDSelected, setCryptoSymbolIDSelected] = useState("")
+  const [quantityCrypto, setQuantityCrypto] = useState(0)
+  const [quotes, setQuotes] = useState<QuotesTop[]>([])
+  const userStore = useAppSelector(store => {
+    return store.user
+  })
+
+  function handleSelectChange(event: string) {
+    setCryptoSymbolIDSelected(event)
+  }
+
+  async function handleAddCrypto() {
+    try {
+      if(quantityCrypto > 0) {
+        const cryptosFounds = await coinApi.get(`/quotes/current?filter_symbol_id=${cryptoSymbolIDSelected}`, 
+          {
+            headers: {
+              "Content-type": 'application/json',
+              "X-CoinAPI-Key": API_KEY
+            }
+          }
+        ).then((response) => response.data) as QuotesWithFilter[]
+
+        const cryptoSelected = cryptosFounds.find(crypto => crypto.symbol_id === cryptoSymbolIDSelected) as QuotesWithFilter
+        const urlSelected = assets.find(asset => asset.asset_id === getAssetID(cryptoSymbolIDSelected))
+
+        const priceHolding = cryptoSelected.ask_price * cryptoSelected.ask_size
+        const changeVariaty = ((cryptoSelected.ask_price - cryptoSelected.last_trade.price)/cryptoSelected.last_trade.price)*100
+
+        if(userStore.id) {
+          const myWalletFound = (await fakeApi.get(`/wallets/${userStore.id}`)).data as WalletDTO
+
+          if(myWalletFound.cryptos.length <= 0) {
+            const addFirstCrypto = {
+              id: generateRandomID(36),
+              symbol_id: cryptoSymbolIDSelected,
+              url: urlSelected ? urlSelected.url : '/bitcoin_icon.png',
+              nameCrypto: getAssetName(cryptoSymbolIDSelected),
+              asset_id: getAssetID(cryptoSymbolIDSelected),
+              holdings: priceHolding,
+              quantity: quantityCrypto,
+              change: changeVariaty.toFixed(2)
+            }
+
+            await fakeApi.put(`/wallets/${userStore.id}`, { cryptos: [addFirstCrypto], balance: priceHolding })
+          } else {
+            const fetchCryptoInWallet = myWalletFound.cryptos.find(crypto => crypto.symbol_id === cryptoSymbolIDSelected)
+            if(fetchCryptoInWallet) {
+              let newBalance = myWalletFound.balance
+              const updateCryptoExists = myWalletFound.cryptos.map(crypto => {
+                if(crypto.symbol_id === cryptoSymbolIDSelected) {
+                  newBalance += Number(crypto.holdings) + priceHolding
+                  return {
+                    ...crypto,
+                    holdings: crypto.holdings + priceHolding,
+                    quantity: crypto.quantity + quantityCrypto,
+                    change: changeVariaty.toFixed(2)
+                  }
+                } else {
+                  return crypto
+                }
+              })
+
+              await fakeApi.put(`/wallets/${userStore.id}`, { cryptos: updateCryptoExists, balance: newBalance })
+            } else {
+              const addCrypto = {
+                id: generateRandomID(36),
+                symbol_id: cryptoSymbolIDSelected,
+                url: urlSelected ? urlSelected.url : '/bitcoin_icon.png',
+                nameCrypto: getAssetName(cryptoSymbolIDSelected),
+                asset_id: getAssetID(cryptoSymbolIDSelected),
+                holdings: priceHolding,
+                quantity: quantityCrypto,
+                change: changeVariaty.toFixed(2)
+              }
+
+              const newBalance = myWalletFound.balance + addCrypto.holdings
+  
+              await fakeApi.put(`/wallets/${userStore.id}`, { cryptos: [...myWalletFound.cryptos, addCrypto], balance: newBalance })
+            }
+          }
+        }
+        setQuantityCrypto(0)
+      } else {
+        alert('The value must be greater than 0')
+      }
+    } catch (error) {
+      console.log('ERROR')
+      console.log(error)
+    }
+  }
+
+  useEffect(() => {
+    async function fetchTopCryptos() {
+      const cryptos = await coinApi.get('/quotes/latest?limit=5', 
+        {
+          headers: {
+            "Content-type": 'application/json',
+            "X-CoinAPI-Key": API_KEY
+          }
+        }
+      )
+
+      if(cryptos.data) {
+        setQuotes(cryptos.data)
+      }
+    }
+
+    fetchTopCryptos()
+  }, [])
 
   return (
     <Dialog.Portal>
@@ -42,7 +133,7 @@ export function ModalAddCrypto() {
         </Dialog.Title>
         <fieldset className="flex flex-col gap-4 xl:gap-6 items-center mt-6">
           
-          <Select.Root>
+          <Select.Root onValueChange={(e) => handleSelectChange(e)}>
             <Select.Trigger 
               className="flex justify-between items-center w-60 md:w-[272px] xl:w-[384px] h-[48px] p-4 body text-text-base border border-secondary-300 rounded-md group"
               aria-label="Crypto"
@@ -61,22 +152,26 @@ export function ModalAddCrypto() {
               >
                 <Select.Viewport>
                   <Select.Group>
-                    {fakeListCryptos.length > 0 
+                    {quotes.length > 0 
                     &&
-                      fakeListCryptos.map((crypto) => 
-                        <div key={crypto.cryptoName}>
-                          <Select.Item value={crypto.cryptoName} className="label text-text-base relative flex justify-between items-center py-4 px-6 rounded cursor-pointer hover:bg-secondary-100">
-                            <Select.SelectItemText>
-                              <div className="flex items-center">
-                                <Image className="mr-2" src={crypto.urlImage} width={16} height={16} alt={crypto.cryptoName} />
-                                  {crypto.cryptoName}&nbsp;
-                                <span className="text-secondary-500">{crypto.cryptoInitialsName}</span>
-                              </div>
-                            </Select.SelectItemText>
-                            <CaretRight className="text-secondary-300 hover:text-secondary-300/50" size={25} weight="bold" />
-                          </Select.Item>
-                          <Select.Separator className="h-[1px] bg-secondary-200" />
-                        </div>
+                      quotes.map((quote, index) => {
+                        let urlAsset = assets.find(asset => asset.asset_id === getAssetID(quote.symbol_id))
+                        return (
+                          <div key={quote.ask_price + (index+1)}>
+                            <Select.Item value={quote.symbol_id} className="label text-text-base relative flex justify-between items-center py-4 px-6 rounded cursor-pointer hover:bg-secondary-100">
+                              <Select.SelectItemText>
+                                <div className="flex items-center">
+                                  <Image className="mr-2" src={urlAsset ? urlAsset.url : "/bitcoin_icon.png"} width={16} height={16} alt={getAssetName(quote.symbol_id)} />
+                                    {getAssetName(quote.symbol_id)}&nbsp;
+                                  <span className="text-secondary-500">{getAssetID(quote.symbol_id)}</span>
+                                </div>
+                              </Select.SelectItemText>
+                              <CaretRight className="text-secondary-300 hover:text-secondary-300/50" size={25} weight="bold" />
+                            </Select.Item>
+                            <Select.Separator className="h-[1px] bg-secondary-200" />
+                          </div>
+                        )
+                        }
                       )
                     }
                   </Select.Group>
@@ -92,15 +187,14 @@ export function ModalAddCrypto() {
             placeholder="0.00"
             step="0.05"
             min="0"
+            onChange={(e) => setQuantityCrypto(Number(e.target.value))}
           />
         </fieldset>
         
         <fieldset className="flex flex-col items-center">
-          <Dialog.Close asChild aria-label="Close">
-            <button className="btn-primary w-60 md:w-[272px] xl:w-[384px] h-[48px] body py-3 mt-6 xl:mt-8">
+            <button type="button" onClick={handleAddCrypto} className="btn-primary w-60 md:w-[272px] xl:w-[384px] h-[48px] body py-3 mt-6 xl:mt-8">
               Add Crypto
             </button>
-          </Dialog.Close>
         </fieldset>
         
         <Dialog.Close asChild aria-label="Close">
