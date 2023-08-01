@@ -1,6 +1,7 @@
 'use client';
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from 'next/navigation'
 import * as Dialog from '@radix-ui/react-dialog'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import * as HoverCard from '@radix-ui/react-hover-card';
@@ -8,17 +9,62 @@ import { CaretDown, SignOut, Plus, List, X } from "@phosphor-icons/react";
 import { ModalAddCrypto } from "@/components/ModalAddCrypto";
 import { TrBodyCrypto } from "@/components/TrBodyCrypto";
 import { CardTradeCryptoForMobileScreen } from "@/components/CardTradeCryptoForMobileScreen";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { add, useAppSelector } from "@/redux/store";
+import { fakeApi } from "@/services/api";
+import { WalletDTO, UsersDTO } from "@/DTOs/fakeApiDTOs";
+import { useDispatch } from "react-redux";
 
 export default function Dashboard() {
   const [showCardCrypto, setShowCardCrypto] = useState(false)
   const [showDrawerMenu, setShowDrawerMenu] = useState(false)
+  const [myWallet, setMyWallet] = useState<WalletDTO>({} = {} as WalletDTO)
+  const userStore = useAppSelector(store => {
+    return store.user
+  })
+  const [user, setUser] = useState<UsersDTO>(userStore)
+  const dispatch = useDispatch()
 
-  const fakeCryptos = [
-    {
-      item: '1'
+  const router = useRouter()
+
+  useEffect(() => {
+    const fetchLocalStorageUserId = localStorage.getItem('@edusynch-challenge-rafaelq/userId')
+    async function loadMyUser() {
+      const userIDLocalStorage = fetchLocalStorageUserId ? JSON.parse(fetchLocalStorageUserId) : {}
+      const allUsersFound = (await fakeApi.get('/users')).data as UsersDTO[]
+
+      if(userIDLocalStorage) {
+        const userFound = allUsersFound.find((user) => user.id === userIDLocalStorage)
+
+        if(userFound) {
+          setUser(userFound)
+          dispatch(add({
+            userFound,
+          }))
+        }
+      }
     }
-  ]
+
+    loadMyUser()    
+  }, [dispatch])
+
+  useEffect(() => {
+    async function loadMyWallet() {
+      const myWalletFound = (await fakeApi.get(`/wallets/${user.id}`)).data as WalletDTO
+      if(myWalletFound) {
+        setMyWallet(myWalletFound)
+      }
+    }
+
+    if(user.id) {
+      loadMyWallet()
+    }
+  }, [user.id])
+
+  function handleLogout() {
+    localStorage.removeItem('@edusynch-challenge-rafaelq/userId')
+    router.back()
+  }
 
   return (
     <main className="h-screen md:h-full flex flex-col bg-white xl:bg-secondary-150">
@@ -47,12 +93,23 @@ export default function Dashboard() {
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild className="cursor-pointer">
             <div className="flex justify-center items-center group">
-              <Image className="w-6 h-6 md:w-8 md:h-8 rounded-full mr-2" src="https://avatars.githubusercontent.com/u/48213007?v=4" width={32} height={32} alt='me' />
-              <h6 className="label hidden md:flex text-text-base mr-1">
-                Rafael
-              </h6>
-              <CaretDown className="hidden md:flex text-secondary-400 group-data-[state=open]:rotate-180 duration-100" size={16} weight="bold" />
-              <CaretDown className="flex md:hidden text-secondary-400 group-data-[state=open]:rotate-180 duration-100" size={8} weight="bold" />
+              {user.id
+              ?
+              <>
+                <Image className="w-6 h-6 md:w-8 md:h-8 rounded-full mr-2" src={user.avatar} width={32} height={32} alt={user.name} />
+                <h6 className="label hidden md:flex text-text-base mr-1">
+                  {user.name}
+                </h6>
+                <CaretDown className="hidden md:flex text-secondary-400 group-data-[state=open]:rotate-180 duration-100" size={16} weight="bold" />
+                <CaretDown className="flex md:hidden text-secondary-400 group-data-[state=open]:rotate-180 duration-100" size={8} weight="bold" />
+              </>
+              :
+              <>
+                <Image className="animate-spin mr-2" src="/spinner_loading.png" width={20} height={20} alt='spinner loading' />
+                <span>Loading ...</span>
+              </>
+              }
+              
             </div>
           </DropdownMenu.Trigger>
 
@@ -63,9 +120,9 @@ export default function Dashboard() {
             >
               <div className="w-full flex justify-between items-center">
                 <SignOut className="text-secondary-500 mr-4" size={16} weight="bold" />
-                <Link href="/" className="label text-secondary-500" >
+                <button onClick={handleLogout} className="label text-secondary-500" >
                   Logout
-                </Link>
+                </button>
               </div>
               <DropdownMenu.Arrow className="fill-white" />
             </DropdownMenu.Content>
@@ -207,7 +264,7 @@ export default function Dashboard() {
 
               <div className="w-[50%] bg-primary-100 flex justify-center items-center rounded-e-lg py-3 md:py-4 xl:py-9">
                 <h3 className="body md:h4 xl:h3 text-text-base">
-                  <span className="font-bold">$32,256.56</span>
+                  <span className="font-bold">${myWallet.balance ? new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 }).format(myWallet.balance) : ' 0.00'}</span>
                 </h3>
               </div>
             </div>
@@ -298,7 +355,7 @@ export default function Dashboard() {
               </Dialog.Root>
             </div>
 
-            {fakeCryptos.length <= 0
+            {myWallet.id && myWallet.cryptos.length <= 0
             ?
               <div className="flex flex-col flex-1 justify-center items-center py-20">
                 <div className="flex flex-col justify-center items-center">
@@ -312,6 +369,7 @@ export default function Dashboard() {
                 </div>
               </div>
             :
+            myWallet.id ?
             <>
               <div className="hidden md:flex flex-col flex-1 justify-center items-center pt-6">
                 <table className="table-auto w-full">
@@ -325,107 +383,54 @@ export default function Dashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    <TrBodyCrypto 
-                      indiceValue="01"
-                      urlImage="/bitcoin_icon.png"
-                      cryptoValue="Bitcoin"
-                      cryptoInitialsValue="BTC"
-                      priceValue="US$ 25.499,52"
-                      changeValue="+5,65%"
-                      actionBuy={() => {}}
-                      detailPrice="434 BTC"
-                    />
-                    <TrBodyCrypto 
-                      indiceValue="02"
-                      urlImage="/ethereum_icon.png"
-                      cryptoValue="Ethereum"
-                      cryptoInitialsValue="ETH"
-                      priceValue="US$ 15.499,52"
-                      changeValue="-5,65%"
-                      actionBuy={() => {}}
-                      detailPrice="434 BTC"
-                    />
-                    <TrBodyCrypto 
-                      indiceValue="03"
-                      urlImage="/cardano_icon.png"
-                      cryptoValue="Cardano"
-                      cryptoInitialsValue="ADA"
-                      priceValue="US$ 5.499,52"
-                      changeValue="-5,65%"
-                      actionBuy={() => {}}
-                      detailPrice="434 BTC"
-                    />
-                    <TrBodyCrypto 
-                      indiceValue="04"
-                      urlImage="/solana_icon.png"
-                      cryptoValue="Solana"
-                      cryptoInitialsValue="SOL"
-                      priceValue="US$ 2.499,52"
-                      changeValue="-5,65%"
-                      actionBuy={() => {}}
-                      detailPrice="434 BTC"
-                    />
-                    <TrBodyCrypto 
-                      indiceValue="05"
-                      urlImage="/usdcoin_icon.png"
-                      cryptoValue="USD Coin"
-                      cryptoInitialsValue="USDC"
-                      priceValue="US$ 25.499,52"
-                      changeValue="+5,65%"
-                      actionBuy={() => {}}
-                      detailPrice="434 BTC"
-                    />
+                    {
+                      myWallet.cryptos.map((crypto, index) => 
+                        <TrBodyCrypto 
+                          key={crypto.id}
+                          indiceValue={(index+1).toString().padStart(2, '0')}
+                          urlImage={crypto.url ? crypto.url : '/bitcoin_icon.png'}
+                          cryptoValue={crypto.nameCrypto}
+                          cryptoInitialsValue={crypto.asset_id}
+                          priceValue={`US$ ${new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 }).format(Number(crypto.holdings))}`}
+                          changeValue={Number(crypto.change) > 0 ? '+'+crypto.change : '-'+crypto.change}
+                          actionBuy={() => {}}
+                          detailPrice="434 BTC"
+                        />
+                      )
+                    }
                   </tbody>
                 </table>
               </div>
               <div className="grid md:hidden grid-cols-2 gap-4 mb-4">
-                <CardTradeCryptoForMobileScreen 
-                  urlImage="/bitcoin_icon.png"
-                  cryptoValue="Bitcoin"
-                  cryptoInitialsValue="BTC"
-                  priceValue="US$ 25.499,52"
-                  changeValue="+5,65%"
-                  detailPrice="434 BTC"
-                />
-                <CardTradeCryptoForMobileScreen 
-                  urlImage="/ethereum_icon.png"
-                  cryptoValue="Ethereum"
-                  cryptoInitialsValue="ETH"
-                  priceValue="US$ 15.499,52"
-                  changeValue="-5,65%"
-                  detailPrice="434 BTC"
-                />
-                <CardTradeCryptoForMobileScreen 
-                  urlImage="/cardano_icon.png"
-                  cryptoValue="Cardano"
-                  cryptoInitialsValue="ADA"
-                  priceValue="US$ 5.499,52"
-                  changeValue="-5,65%"
-                  detailPrice="434 BTC"
-                />
-                <CardTradeCryptoForMobileScreen 
-                  urlImage="/solana_icon.png"
-                  cryptoValue="Solana"
-                  cryptoInitialsValue="SOL"
-                  priceValue="US$ 2.499,52"
-                  changeValue="-5,65%"
-                  detailPrice="434 BTC"
-                />
                 {
-                showCardCrypto
-                &&
-                <>
-                  <CardTradeCryptoForMobileScreen 
-                    urlImage="/usdcoin_icon.png"
-                    cryptoValue="USD Coin"
-                    cryptoInitialsValue="USDC"
-                    priceValue="US$ 25.499,52"
-                    changeValue="+5,65%"
-                    detailPrice="434 BTC"
-                  />
-                </>
+                  myWallet.cryptos.map((crypto, index) => 
+                    {
+                      return (
+                        (index+1) <= 4 
+                          ?
+                            <CardTradeCryptoForMobileScreen 
+                              key={crypto.id}
+                              urlImage={crypto.url ? crypto.url : '/bitcoin_icon.png'}
+                              cryptoValue={crypto.nameCrypto}
+                              cryptoInitialsValue={crypto.asset_id}
+                              priceValue={`US$ ${new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 }).format(Number(crypto.holdings))}`}
+                              changeValue={Number(crypto.change) > 0 ? '+'+crypto.change : '-'+crypto.change}
+                              detailPrice="434 BTC"
+                            />
+                          : showCardCrypto &&
+                            <CardTradeCryptoForMobileScreen 
+                              key={crypto.id}
+                              urlImage={crypto.url ? crypto.url : '/bitcoin_icon.png'}
+                              cryptoValue={crypto.nameCrypto}
+                              cryptoInitialsValue={crypto.asset_id}
+                              priceValue={`US$ ${new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 }).format(Number(crypto.holdings))}`}
+                              changeValue={Number(crypto.change) > 0 ? '+'+crypto.change : '-'+crypto.change}
+                              detailPrice="434 BTC"
+                            />
+                      )
+                    }
+                  )
                 }
-                
               </div>
               {
               !showCardCrypto
@@ -441,6 +446,11 @@ export default function Dashboard() {
                 </div>
               }
             </>
+            :
+              <div className="flex justify-center items-center py-6">
+                <Image className="animate-spin mr-2" src="/spinner_loading.png" width={20} height={20} alt='spinner loading' />
+                <span>Loading ...</span>
+              </div>
             }
 
           </div>

@@ -1,18 +1,28 @@
 'use client';
-import { CardInfo } from "@/components/CardInfo"
-import { Tag } from "@/components/Tag"
-import { TrBodyCrypto } from "@/components/TrBodyCrypto"
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import Image from "next/image"
-import 'keen-slider/keen-slider.min.css'
+import { z } from "zod";
 import { useKeenSlider } from 'keen-slider/react'
+import 'keen-slider/keen-slider.min.css'
 import * as Dialog from '@radix-ui/react-dialog'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { ArrowRight, Plus, List, X } from "@phosphor-icons/react"
+import { CardInfo } from "@/components/CardInfo"
+import { Tag } from "@/components/Tag"
+import { TrBodyCrypto } from "@/components/TrBodyCrypto"
 import { ModalSignIn } from "@/components/ModalSignIn";
 import { ModalSignUp } from "@/components/ModalSignUp";
 import { PriceInNews } from "@/components/PriceInNews";
 import { TrBodyCryptoForMobile } from "@/components/TrBodyCryptoForMobile";
-import Link from "next/link";
+import { API_KEY, coinApi, fakeApi } from "@/services/api";
+import { SubscribersDTO } from "@/DTOs/fakeApiDTOs";
+import { generateRandomID } from "@/utils/generateRandomID";
+import { getAssetID, getAssetName } from "@/utils/getAssetID";
+import { assets } from "@/utils/assets_icons";
+import { QuotesTop } from "@/DTOs/coinAPIDTOs";
+
+const schemaSubscribeValidate = z.string().email('Email invalid!')
 
 const animation = { duration: 25000, easing: (t: any) => t }
 
@@ -61,6 +71,66 @@ export default function Home() {
       },
     },
   )
+
+  const [showAllCryptos, setShowAllCryptos] = useState(false)
+  const [loadingSubscribe, setLoadingSubscribe] = useState(false)
+  const [emailSubscribe, setEmailSubscribe] = useState("")
+
+  const [quotes, setQuotes] = useState<QuotesTop[]>([])
+
+  useEffect(() => {
+    async function fetchTopCryptos() {
+      const cryptos = await coinApi.get('/quotes/latest?limit=10', 
+        {
+          headers: {
+            "Content-type": 'application/json',
+            "X-CoinAPI-Key": API_KEY
+          }
+        }
+      )
+
+      if(cryptos.data) {
+        setQuotes(cryptos.data)
+      }
+    }
+
+    fetchTopCryptos()
+  }, [])
+
+  async function handleSubscribe() {
+    try {
+      setLoadingSubscribe(true)
+      schemaSubscribeValidate.parse(emailSubscribe)
+
+      const subscribers = (await fakeApi.get('/subscribers')).data as SubscribersDTO[]
+
+      const subscriberFound = subscribers.find((subscriber) => subscriber.email === emailSubscribe)
+
+      if(subscriberFound) {
+        alert('This email is already a subscriber!')
+        setLoadingSubscribe(false)
+        return
+      }
+
+      const newSubscriber = {
+        id: generateRandomID(36),
+        email: emailSubscribe
+      } as SubscribersDTO
+
+      await fakeApi.post('/subscribers', newSubscriber)
+
+      alert('Email registered successfully!')
+      setEmailSubscribe("")
+      setLoadingSubscribe(false)
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        alert('Email invalid!')
+      } else {
+        alert('Internal Server Error!')
+      }
+      setLoadingSubscribe(false)
+    }
+  }
   
   return (
     <main className="w-full flex flex-col bg-white items-center">
@@ -366,9 +436,17 @@ export default function Home() {
 
         <table className="table-auto w-full hidden md:table">
           <caption className="caption-bottom mt-8">
-            <button className="text-primary-500 flex items-center body hover:text-primary-400">
-              View more
-              <Plus className="text-primary-500 hover:text-primary-400 ml-2" size={16} weight="bold" />
+            <button onClick={() => setShowAllCryptos(!showAllCryptos)} className="text-primary-500 flex items-center body hover:text-primary-400">
+              {
+                showAllCryptos
+                ?
+                  <span>View less</span>
+                :
+                <>
+                  <span>View more</span>
+                  <Plus className="text-primary-500 hover:text-primary-400 ml-2" size={16} weight="bold" />
+                </>
+              }
             </button>
           </caption>
           <thead>
@@ -381,49 +459,46 @@ export default function Home() {
             </tr>
           </thead>
           <tbody>
-            <TrBodyCrypto 
-              indiceValue="01"
-              urlImage="/bitcoin_icon.png"
-              cryptoValue="Bitcoin"
-              cryptoInitialsValue="BTC"
-              priceValue="US$ 25.499,52"
-              changeValue="+5,65%"
-              actionBuy={() => {}}
-            />
-            <TrBodyCrypto 
-              indiceValue="02"
-              urlImage="/ethereum_icon.png"
-              cryptoValue="Ethereum"
-              cryptoInitialsValue="ETH"
-              priceValue="US$ 15.499,52"
-              changeValue="-5,65%"
-              actionBuy={() => {}}
-            />
-            <TrBodyCrypto 
-              indiceValue="03"
-              urlImage="/cardano_icon.png"
-              cryptoValue="Cardano"
-              cryptoInitialsValue="ADA"
-              priceValue="US$ 5.499,52"
-              changeValue="-5,65%"
-              actionBuy={() => {}}
-            />
-            <TrBodyCrypto 
-              indiceValue="04"
-              urlImage="/solana_icon.png"
-              cryptoValue="Solana"
-              cryptoInitialsValue="SOL"
-              priceValue="US$ 2.499,52"
-              changeValue="+5,65%"
-              actionBuy={() => {}}
-            />
+            {
+              quotes.length > 0 &&
+              quotes.map((quote, index) => 
+                {
+                  let urlAsset = assets.find(asset => asset.asset_id === getAssetID(quote.symbol_id))
+                  return (
+                    (index+1) <= 4 
+                      ?
+                        <TrBodyCrypto 
+                          key={quote.ask_price + (index+1)}
+                          indiceValue={(index+1).toString().padStart(2, '0')}
+                          urlImage={urlAsset ? urlAsset.url : "/bitcoin_icon.png"}
+                          cryptoValue={getAssetName(quote.symbol_id)}
+                          cryptoInitialsValue={getAssetID(quote.symbol_id)}
+                          priceValue={`US$ ${new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 }).format(quote.ask_price * quote.ask_size)}`}
+                          changeValue="+5,65%"
+                          actionBuy={() => {}}
+                        />
+                      : showAllCryptos &&
+                        <TrBodyCrypto 
+                          key={quote.ask_price + (index+1)}
+                          indiceValue={(index+1).toString().padStart(2, '0')}
+                          urlImage={urlAsset ? urlAsset.url : "/bitcoin_icon.png"}
+                          cryptoValue={getAssetName(quote.symbol_id)}
+                          cryptoInitialsValue={getAssetID(quote.symbol_id)}
+                          priceValue={`US$ ${new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 2 }).format(quote.ask_price * quote.ask_size)}`}
+                          changeValue="+5,65%"
+                          actionBuy={() => {}}
+                        />
+                  )
+                }
+              )
+            }
           </tbody>
         </table>
 
         <div className="table border-separate table-auto w-full md:hidden">
           <div className="table-header-group align-middle border border-inherit">
             <div className="table-row align-baseline border border-inherit">
-              <div className="align-baseline w-full flex justify-between items-center px-4 text-secondary-500"> {/* th display diferente do padrão */}
+              <div className="align-baseline w-full flex justify-between items-center px-4 text-secondary-500">
                 <h6 className="small-label">
                   Crypto
                 </h6>
@@ -486,20 +561,38 @@ export default function Home() {
             Lorem ipsum dolor sit amet, consectetur adipiscing elit ut aliquam, purus sit amet luctus venenatis, lectus magna fringilla urna, porttitor
           </p>
         </div>
-        <div className="flex flex-col mt-10 md:m-0">
+        <form className="flex flex-col mt-10 md:m-0">
           <label htmlFor="email" className="text-white mb-2 z-0">
             Email
           </label>
           <input 
             id="email"
-            className="w-[272px] xl:w-[384px] h-[48px] p-4 text-secondary-400 body rounded-md focus:outline-none mb-5 z-0"
+            name="emailSubscribe"
+            className="w-[272px] xl:w-[384px] h-[48px] p-4 text-secondary-400 body rounded-md focus:outline-none mb-5 z-0 disabled:text-secondary-300 disabled:cursor-not-allowed"
             type="email"
-            placeholder="Email" 
+            placeholder="Email"
+            value={emailSubscribe}
+            onChange={(e) => setEmailSubscribe(e.target.value)}
+            disabled={loadingSubscribe}
           />
-          <button className="btn-primary w-[272px] xl:w-[384px] h-[48px] body py-3 z-0">
-            Subscribe
+          <button 
+            type="button"
+            onClick={handleSubscribe}
+            className="btn-primary w-[272px] xl:w-[384px] h-[48px] body py-3 z-0 disabled:bg-primary-500/40 disabled:cursor-not-allowed" 
+            disabled={loadingSubscribe}
+          >
+            {
+              loadingSubscribe
+              ?
+              <>
+                <Image className="animate-spin mr-2" src="/spinner_loading.png" width={20} height={20} alt='spinner loading' />
+                <span>Loading ...</span>
+              </>
+              :
+              <span>Subscribe</span>
+            }
           </button>
-        </div>
+        </form>
       </div>
 
       <footer className="w-[272px] md:w-[42rem] xl:w-[76rem] flex justify-center md:justify-between items-center p-6">
